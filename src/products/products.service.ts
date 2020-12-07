@@ -1,18 +1,24 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
-import { Product } from './products.model';
-
-
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from "mongoose";
+import { Product, ProductSchema, ProductDocument } from "src/models/products.model"
+import {Products} from 'src/products/products.model'
 @Injectable()
 export class ProductsService {
-    private products: Product[] = [];
+    private products: Products[] = [];
 
-    insertProduct(title: string, desc: string, price: number) {
-        const prodId = Math.random().toString();
-        const newProduct = new Product(prodId, title, desc, price);
-        this.products.push(newProduct);
-        return prodId;
+    constructor(@InjectModel(Product.name) private readonly productModel: Model<ProductDocument>) {}
+
+    async insertProduct(title: string, description: string, price: number) {
+        const newProduct = new this.productModel({
+            title,
+            description,
+            price
+        });
+        const result = await newProduct.save();
+        console.log(result);
     }
-
+    
     getProducts() {
         return [...this.products];
     }
@@ -29,13 +35,13 @@ export class ProductsService {
             updatedProduct.title = title;
         }
         if (description) {
-            updatedProduct.desc = description;
+            updatedProduct.description = description;
         }
         if (price) {
             updatedProduct.price = price;
         }
 
-        this.products[index] = updatedProduct;
+        // this.products[index] = updatedProduct;
     }
     
     removeProduct(productId: string) {
@@ -44,13 +50,13 @@ export class ProductsService {
         this.products.splice(index, 1);
     }
 
-    findProduct(productId: string): [Product, number] {
+    findProduct(productId: string): any {
         const productIndex = this.products.findIndex(p => p.id === productId);
         const product = this.products[productIndex];
         if (!product) {
             throw new NotFoundException();
         }
-        return [product, productIndex];
+        // return [product, productIndex];
     }
-
+    
 }
